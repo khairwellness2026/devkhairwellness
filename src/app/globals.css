@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-forest: #073D2C;
+    --color-dark-green: #052C21;
+    --color-botanical: #426B4E;
+    --color-gold: #C9A34A;
+    --color-ivory: #FAF7EF;
+    --color-beige: #EEE6D7;
+    --color-charcoal: #20251F;
+  }
+
+  body {
+    background-color: #FFFFFF;
+    color: #20251F;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom smooth scroll and refined selection */
+html {
+  scroll-behavior: smooth;
+}
+
+/* RTL layout specific helpers */
+[dir="rtl"] {
+  font-family: var(--font-amiri), var(--font-inter), sans-serif;
+}
+
