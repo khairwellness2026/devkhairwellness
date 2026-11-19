@@ -117,6 +117,7 @@ export const getHomepageSections = cache(
           is_visible: item.is_visible,
           sort_order: item.sort_order,
           image_url: item.image_url,
+          mobile_image_url: item.metadata?.mobile_image_url || undefined,
           metadata: item.metadata,
           title: trans?.title || '',
           subtitle: trans?.subtitle || '',
@@ -160,6 +161,24 @@ export const getDepartments = cache(async (locale: Locale): Promise<Department[]
       const trans =
         dept.department_translations?.find((t: any) => t.locale === locale) ||
         dept.department_translations?.find((t: any) => t.locale === 'en');
+
+      let hero_banner_url: string | undefined = undefined;
+      let hero_mobile_banner_url: string | undefined = undefined;
+      if (Array.isArray(dept.gallery_images)) {
+        for (const item of dept.gallery_images) {
+          if (typeof item === 'string') {
+            if (item.startsWith('hero:')) hero_banner_url = item.slice(5);
+            else if (item.startsWith('mobile:')) hero_mobile_banner_url = item.slice(7);
+          }
+        }
+        if (!hero_banner_url && dept.gallery_images[0] && !dept.gallery_images[0].startsWith('mobile:')) {
+          hero_banner_url = dept.gallery_images[0];
+        }
+        if (!hero_mobile_banner_url && dept.gallery_images[1] && !dept.gallery_images[1].startsWith('hero:')) {
+          hero_mobile_banner_url = dept.gallery_images[1];
+        }
+      }
+
       return {
         id: dept.id,
         slug: dept.slug,
@@ -174,6 +193,8 @@ export const getDepartments = cache(async (locale: Locale): Promise<Department[]
         treatments: Array.isArray(trans?.treatments) ? trans.treatments : [],
         meta_title: trans?.meta_title,
         meta_description: trans?.meta_description,
+        hero_banner_url,
+        hero_mobile_banner_url,
       };
     });
   } catch (err) {
@@ -211,6 +232,23 @@ export const getDepartmentBySlug = cache(
         data.department_translations?.find((t: any) => t.locale === locale) ||
         data.department_translations?.find((t: any) => t.locale === 'en');
 
+      let hero_banner_url: string | undefined = undefined;
+      let hero_mobile_banner_url: string | undefined = undefined;
+      if (Array.isArray(data.gallery_images)) {
+        for (const item of data.gallery_images) {
+          if (typeof item === 'string') {
+            if (item.startsWith('hero:')) hero_banner_url = item.slice(5);
+            else if (item.startsWith('mobile:')) hero_mobile_banner_url = item.slice(7);
+          }
+        }
+        if (!hero_banner_url && data.gallery_images[0] && !data.gallery_images[0].startsWith('mobile:')) {
+          hero_banner_url = data.gallery_images[0];
+        }
+        if (!hero_mobile_banner_url && data.gallery_images[1] && !data.gallery_images[1].startsWith('hero:')) {
+          hero_mobile_banner_url = data.gallery_images[1];
+        }
+      }
+
       return {
         id: data.id,
         slug: data.slug,
@@ -225,6 +263,8 @@ export const getDepartmentBySlug = cache(
         treatments: Array.isArray(trans?.treatments) ? trans.treatments : [],
         meta_title: trans?.meta_title,
         meta_description: trans?.meta_description,
+        hero_banner_url,
+        hero_mobile_banner_url,
       };
     } catch (err) {
       console.error(`Error fetching department by slug ${slug}:`, err);
@@ -459,12 +499,19 @@ export const getPageContent = cache(async (slug: string, locale: Locale): Promis
 
     const trans =
       data.page_translations?.find((t: any) => t.locale === locale) ||
-      data.page_translations?.find((t: any) => t.locale === 'en');
+      data.page_translations?.find((t: any) => t.locale === 'en') ||
+      data.page_translations?.[0];
+
+    const featured_image =
+      trans?.content?.featured_image ||
+      data.page_translations?.find((t: any) => t.locale === 'en')?.content?.featured_image ||
+      data.page_translations?.find((t: any) => t?.content?.featured_image)?.content?.featured_image ||
+      '';
 
     return {
       id: data.id,
       slug: data.slug,
-      featured_image: trans?.content?.featured_image || '',
+      featured_image,
       title: trans?.title || '',
       subtitle: trans?.subtitle || '',
       content: trans?.content || {},

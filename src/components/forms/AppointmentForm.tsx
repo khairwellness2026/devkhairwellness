@@ -34,11 +34,30 @@ export default function AppointmentForm({
   const [loading, setLoading] = useState(false);
   const [successRef, setSuccessRef] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg(null);
+    setFieldErrors({});
+
+    // Client-side validation before hitting API
+    const errors: Record<string, string> = {};
+    if (!formData.patient_name || formData.patient_name.trim().length < 2) {
+      errors.patient_name = 'Full name must be at least 2 characters';
+    }
+    if (!formData.phone || formData.phone.trim().length < 7) {
+      errors.phone = 'Please provide a valid phone number';
+    }
+    if (!formData.preferred_date) {
+      errors.preferred_date = 'Please select a preferred date';
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/appointments', {
@@ -50,6 +69,17 @@ export default function AppointmentForm({
       const data = await res.json();
 
       if (!res.ok) {
+        // Parse Zod field errors if available
+        if (data.details && Array.isArray(data.details)) {
+          const fe: Record<string, string> = {};
+          data.details.forEach((d: any) => {
+            if (d.path?.[0]) fe[d.path[0]] = d.message;
+          });
+          if (Object.keys(fe).length > 0) {
+            setFieldErrors(fe);
+            throw new Error('Please fix the highlighted fields and try again.');
+          }
+        }
         throw new Error(data.error || 'Failed to submit appointment enquiry');
       }
 
@@ -139,10 +169,13 @@ export default function AppointmentForm({
                   placeholder="e.g. John Doe"
                   value={formData.patient_name}
                   onChange={(e) => setFormData({ ...formData, patient_name: e.target.value })}
-                  className="w-full px-4 py-3 text-xs rounded-xl border border-khair-softBeige focus:border-khair-gold focus:ring-1 focus:ring-khair-gold outline-none transition-all pl-10 rtl:pl-4 rtl:pr-10"
+                  className={`w-full px-4 py-3 text-xs rounded-xl border focus:ring-1 outline-none transition-all pl-10 rtl:pl-4 rtl:pr-10 ${fieldErrors.patient_name ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-khair-softBeige focus:border-khair-gold focus:ring-khair-gold'}`}
                 />
                 <User className="w-4 h-4 text-gray-400 absolute left-3.5 rtl:left-auto rtl:right-3.5 top-3.5" />
               </div>
+              {fieldErrors.patient_name && (
+                <p className="mt-1 text-[10px] text-red-500 font-medium">{fieldErrors.patient_name}</p>
+              )}
             </div>
 
             {/* Phone */}
@@ -157,10 +190,13 @@ export default function AppointmentForm({
                   placeholder="+91 94473 60670"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3 text-xs rounded-xl border border-khair-softBeige focus:border-khair-gold focus:ring-1 focus:ring-khair-gold outline-none transition-all pl-10 rtl:pl-4 rtl:pr-10"
+                  className={`w-full px-4 py-3 text-xs rounded-xl border focus:ring-1 outline-none transition-all pl-10 rtl:pl-4 rtl:pr-10 ${fieldErrors.phone ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-khair-softBeige focus:border-khair-gold focus:ring-khair-gold'}`}
                 />
                 <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 rtl:left-auto rtl:right-3.5 top-3.5" />
               </div>
+              {fieldErrors.phone && (
+                <p className="mt-1 text-[10px] text-red-500 font-medium">{fieldErrors.phone}</p>
+              )}
             </div>
 
             {/* Email (Optional) */}
@@ -214,10 +250,13 @@ export default function AppointmentForm({
                   min={minDate}
                   value={formData.preferred_date}
                   onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
-                  className="w-full px-4 py-3 text-xs rounded-xl border border-khair-softBeige focus:border-khair-gold focus:ring-1 focus:ring-khair-gold outline-none transition-all pl-10 rtl:pl-4 rtl:pr-10"
+                  className={`w-full px-4 py-3 text-xs rounded-xl border focus:ring-1 outline-none transition-all pl-10 rtl:pl-4 rtl:pr-10 ${fieldErrors.preferred_date ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-khair-softBeige focus:border-khair-gold focus:ring-khair-gold'}`}
                 />
                 <Calendar className="w-4 h-4 text-gray-400 absolute left-3.5 rtl:left-auto rtl:right-3.5 top-3.5" />
               </div>
+              {fieldErrors.preferred_date && (
+                <p className="mt-1 text-[10px] text-red-500 font-medium">{fieldErrors.preferred_date}</p>
+              )}
             </div>
 
             {/* Preferred Time Slot */}

@@ -18,6 +18,7 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
   const [saving, setSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -26,22 +27,52 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
     full_description: '',
     treatmentsStr: '',
     featured_image: '',
+    hero_banner_url: '',
+    hero_mobile_banner_url: '',
     icon: 'Leaf',
     is_published: true,
   });
 
   const startEdit = (dept: Department) => {
     setEditingDept(dept);
+    setActiveLang('en');
+    setModalError(null);
     setForm({
-      name: dept.name,
-      slug: dept.slug,
-      short_description: dept.short_description,
-      full_description: dept.full_description,
-      treatmentsStr: dept.treatments.join('\n'),
+      name: dept.name || '',
+      slug: dept.slug || '',
+      short_description: dept.short_description || '',
+      full_description: dept.full_description || '',
+      treatmentsStr: Array.isArray(dept.treatments)
+        ? dept.treatments.join('\n')
+        : typeof dept.treatments === 'string'
+        ? dept.treatments
+        : '',
       featured_image: dept.featured_image || '',
+      hero_banner_url: dept.hero_banner_url || '',
+      hero_mobile_banner_url: dept.hero_mobile_banner_url || '',
       icon: dept.icon || 'Leaf',
-      is_published: dept.is_published,
+      is_published: dept.is_published !== false,
     });
+  };
+
+  const switchLanguage = (targetLocale: Locale) => {
+    setActiveLang(targetLocale);
+    if (!editingDept) return;
+    const pool = targetLocale === 'hi' ? initialHi : targetLocale === 'ar' ? initialAr : initialEn;
+    const match = pool.find((d) => d.id === editingDept.id || d.slug === editingDept.slug);
+    if (match) {
+      setForm((prev) => ({
+        ...prev,
+        name: match.name || prev.name,
+        short_description: match.short_description || '',
+        full_description: match.full_description || '',
+        treatmentsStr: Array.isArray(match.treatments)
+          ? match.treatments.join('\n')
+          : typeof match.treatments === 'string'
+          ? match.treatments
+          : '',
+      }));
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -51,6 +82,7 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
     setSaving(true);
     setSaveNotice(null);
     setErrorNotice(null);
+    setModalError(null);
 
     const updated: Department = {
       ...editingDept,
@@ -62,6 +94,8 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
       featured_image: form.featured_image,
       icon: form.icon,
       is_published: form.is_published,
+      hero_banner_url: form.hero_banner_url,
+      hero_mobile_banner_url: form.hero_mobile_banner_url,
     };
 
     try {
@@ -76,6 +110,8 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
             featured_image: updated.featured_image,
             icon: updated.icon,
             is_published: updated.is_published,
+            hero_banner_url: updated.hero_banner_url || null,
+            hero_mobile_banner_url: updated.hero_mobile_banner_url || null,
             locale: activeLang,
             name: updated.name,
             short_description: updated.short_description,
@@ -92,6 +128,7 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
       setSaveNotice(`Department "${updated.name}" saved to Supabase.`);
       setEditingDept(null);
     } catch (err: any) {
+      setModalError(err.message || 'Error updating department');
       setErrorNotice(err.message || 'Error updating department');
     } finally {
       setSaving(false);
@@ -191,9 +228,24 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
               </p>
 
               <div className="text-[11px] text-gray-500 space-y-1">
-                <span className="font-semibold block text-gray-700">Treatments ({dept.treatments.length}):</span>
-                <p className="truncate text-gray-500">{dept.treatments.join(', ')}</p>
+                <span className="font-semibold block text-gray-700">Treatments ({Array.isArray(dept.treatments) ? dept.treatments.length : 0}):</span>
+                <p className="truncate text-gray-500">{Array.isArray(dept.treatments) ? dept.treatments.join(', ') : ''}</p>
               </div>
+
+              {(dept.hero_banner_url || dept.hero_mobile_banner_url) && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {dept.hero_banner_url && (
+                    <span className="text-[9px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                      🖥 Desktop Banner
+                    </span>
+                  )}
+                  {dept.hero_mobile_banner_url && (
+                    <span className="text-[9px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                      📱 Mobile Banner
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
@@ -224,7 +276,7 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
 
       {/* Edit Department Modal */}
       {editingDept && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl border border-khair-gold/30">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
@@ -238,7 +290,7 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
               <button
                 type="button"
                 onClick={() => setEditingDept(null)}
-                className="p-1 text-gray-400 hover:text-gray-600"
+                className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -251,8 +303,8 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
                 <button
                   key={loc}
                   type="button"
-                  onClick={() => setActiveLang(loc)}
-                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
+                  onClick={() => switchLanguage(loc)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                     activeLang === loc
                       ? 'bg-khair-deepForest text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -262,6 +314,13 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
                 </button>
               ))}
             </div>
+
+            {modalError && (
+              <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -301,6 +360,40 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
                   aspectRatio="landscape"
                   hint="Drag & drop department facility or clinical therapy photo"
                 />
+              </div>
+
+              {/* Hero Banner Images — desktop & mobile */}
+              <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-200/60 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-blue-700">Department Page Hero Banners</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2">🖥 Desktop Hero Banner</p>
+                    <ImageDropzone
+                      value={form.hero_banner_url}
+                      onChange={(url) => setForm({ ...form, hero_banner_url: url })}
+                      folder="khair/departments/banners"
+                      label="Desktop Banner"
+                      aspectRatio="landscape"
+                      hint="Wide landscape image for desktop hero (16:5 or 16:9)"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2">📱 Mobile Hero Banner</p>
+                    <ImageDropzone
+                      value={form.hero_mobile_banner_url}
+                      onChange={(url) => setForm({ ...form, hero_mobile_banner_url: url })}
+                      folder="khair/departments/banners"
+                      label="Mobile Banner"
+                      aspectRatio="portrait"
+                      hint="Portrait image for mobile hero (3:4 or 1:1)"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-blue-600/80 leading-relaxed">
+                  If uploaded, these images replace the deep-green gradient on the department detail page hero banner. Leave empty to use the default branded gradient.
+                </p>
               </div>
 
               <div>
@@ -358,16 +451,17 @@ export default function DepartmentsManagerClient({ initialEn, initialHi, initial
                 <button
                   type="button"
                   onClick={() => setEditingDept(null)}
-                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-khair-deepForest hover:bg-khair-darkGreen rounded-xl shadow-xs"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-khair-deepForest hover:bg-khair-darkGreen rounded-xl shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save Changes</span>
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>{saving ? 'Saving...' : 'Save Changes'}</span>
                 </button>
               </div>
             </form>

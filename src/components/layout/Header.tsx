@@ -68,13 +68,6 @@ export default function Header({ locale, departments, settings }: HeaderProps) {
               {t.home}
             </a>
 
-            <a
-              href={`/${locale}/about`}
-              className="hover:text-khair-botanical transition-colors hover:underline underline-offset-8"
-            >
-              {t.aboutUs}
-            </a>
-
             {/* Departments Dropdown */}
             <div
               className="relative"
@@ -142,6 +135,13 @@ export default function Header({ locale, departments, settings }: HeaderProps) {
             </a>
 
             <a
+              href={`/${locale}/about`}
+              className="hover:text-khair-botanical transition-colors hover:underline underline-offset-8"
+            >
+              {t.aboutUs}
+            </a>
+
+            <a
               href={`/${locale}/contact`}
               className="hover:text-khair-botanical transition-colors hover:underline underline-offset-8"
             >
@@ -198,13 +198,6 @@ export default function Header({ locale, departments, settings }: HeaderProps) {
               {t.home}
             </a>
             <a
-              href={`/${locale}/about`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-gray-100 hover:text-khair-botanical"
-            >
-              {t.aboutUs}
-            </a>
-            <a
               href={`/${locale}/departments`}
               onClick={() => setMobileMenuOpen(false)}
               className="py-2 border-b border-gray-100 hover:text-khair-botanical"
@@ -224,6 +217,13 @@ export default function Header({ locale, departments, settings }: HeaderProps) {
               className="py-2 border-b border-gray-100 hover:text-khair-botanical"
             >
               {t.gallery}
+            </a>
+            <a
+              href={`/${locale}/about`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 border-b border-gray-100 hover:text-khair-botanical"
+            >
+              {t.aboutUs}
             </a>
             <a
               href={`/${locale}/contact`}

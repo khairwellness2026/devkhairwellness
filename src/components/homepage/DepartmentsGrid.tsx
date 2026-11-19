@@ -30,7 +30,7 @@ export default function DepartmentsGrid({ locale, departments }: DepartmentsGrid
     }
   };
 
-  const displayDepts = departments.slice(0, 5);
+  const displayDepts = departments;
 
   return (
     <section className="py-20 bg-white">
@@ -51,16 +51,16 @@ export default function DepartmentsGrid({ locale, departments }: DepartmentsGrid
           </h2>
         </div>
 
-        {/* Cards — 2 col on mobile, 3 on tablet, 5 on desktop */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-5">
+        {/* Cards — 2 col on mobile, 3 on tablet, single row (6 cols) on desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5 lg:gap-3 xl:gap-4">
           {displayDepts.map((dept) => (
             <a
               key={dept.id}
               href={`/${locale}/departments/${dept.slug}`}
-              className="bg-[#FAF7EF] rounded-[20px] sm:rounded-[24px] border border-khair-softBeige/90 shadow-[0_4px_20px_-4px_rgba(7,61,44,0.07)] flex flex-col overflow-hidden"
+              className="bg-[#FAF7EF] rounded-[20px] sm:rounded-[22px] lg:rounded-[24px] border border-khair-softBeige/90 shadow-[0_4px_20px_-4px_rgba(7,61,44,0.07)] flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               {/* ── IMAGE AREA ── */}
-              <div className="relative w-full flex-shrink-0" style={{ height: 'clamp(140px, 30vw, 260px)' }}>
+              <div className="relative w-full flex-shrink-0" style={{ height: 'clamp(130px, 22vw, 220px)' }}>
                 {dept.featured_image ? (
                   <img
                     src={dept.featured_image}
@@ -68,7 +68,7 @@ export default function DepartmentsGrid({ locale, departments }: DepartmentsGrid
                     className="absolute inset-0 w-full h-full object-cover object-center"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-khair-warmIvory to-khair-softBeige/60 p-4 text-center">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-khair-warmIvory to-khair-softBeige/60 p-3 text-center">
                     <span className="text-[10px] font-semibold text-khair-deepForest/70 uppercase tracking-wider">
                       {dept.name}
                     </span>
@@ -77,23 +77,23 @@ export default function DepartmentsGrid({ locale, departments }: DepartmentsGrid
               </div>
 
               {/* ── TEXT BODY — icon badge overlaps image/card boundary ── */}
-              <div className="relative flex flex-col flex-1 px-3 sm:px-5 pb-2 pt-6">
+              <div className="relative flex flex-col flex-1 px-3 sm:px-3.5 lg:px-3 xl:px-4 pb-2 pt-5">
                 {/* Icon badge: straddles image/text border */}
-                <div className="absolute -top-[18px] left-3 sm:left-4 rtl:left-auto rtl:right-3 sm:rtl:right-4 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white shadow-sm border border-khair-gold/40 flex items-center justify-center text-khair-botanical z-10">
+                <div className="absolute -top-[16px] left-3 sm:left-3.5 rtl:left-auto rtl:right-3 sm:rtl:right-3.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white shadow-sm border border-khair-gold/40 flex items-center justify-center text-khair-botanical z-10">
                   {getIcon(dept.icon, dept.slug)}
                 </div>
-                <h3 className="font-serif text-[13px] sm:text-[16px] lg:text-[17px] font-bold text-khair-deepForest leading-snug mb-1">
+                <h3 className="font-serif text-[13px] sm:text-[14px] lg:text-[14px] xl:text-[15px] font-bold text-khair-deepForest leading-snug mb-1">
                   {dept.name}
                 </h3>
-                <p className="text-[10px] sm:text-[11.5px] text-khair-charcoal/75 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                <p className="text-[10px] sm:text-[11px] text-khair-charcoal/75 leading-relaxed line-clamp-2 sm:line-clamp-3">
                   {dept.short_description}
                 </p>
               </div>
 
               {/* ── ARROW BUTTON ── */}
-              <div className="px-3 sm:px-5 pb-4 sm:pb-5 pt-2 flex justify-end">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-khair-gold/60 text-khair-goldDark flex items-center justify-center">
-                  <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 rtl:rotate-180" />
+              <div className="px-3 sm:px-3.5 lg:px-3 xl:px-4 pb-3 sm:pb-4 pt-1 flex justify-end">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-khair-gold/60 text-khair-goldDark flex items-center justify-center">
+                  <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 rtl:rotate-180" />
                 </div>
               </div>
             </a>
