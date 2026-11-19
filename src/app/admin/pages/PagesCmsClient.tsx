@@ -50,6 +50,7 @@ export default function PagesCmsClient({ initialAbout, initialContact }: Props) 
                 story: aboutForm.story,
                 mission: aboutForm.mission,
                 vision: aboutForm.vision,
+                featured_image: aboutForm.featured_image,
               },
             },
           }),

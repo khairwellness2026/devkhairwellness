@@ -74,6 +74,8 @@ export interface Department {
   treatments: string[];
   meta_title?: string;
   meta_description?: string;
+  hero_banner_url?: string;
+  hero_mobile_banner_url?: string;
 }
 
 export interface Doctor {

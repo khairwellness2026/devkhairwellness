@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Appointment, Department, AppointmentStatus } from '@/types';
-import { Search, Download, Filter, MessageSquare, Check, X, Clock, Calendar } from 'lucide-react';
+import { Search, Download, Filter, MessageSquare, Check, X, Clock, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface Props {
   initialAppointments: Appointment[];
@@ -16,6 +16,12 @@ export default function AppointmentsTableClient({ initialAppointments, departmen
   const [deptFilter, setDeptFilter] = useState('all');
   const [selectedApp, setSelectedApp] = useState<Appointment | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error', msg: string) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const filtered = appointments.filter((app) => {
     const matchesSearch =
@@ -28,17 +34,33 @@ export default function AppointmentsTableClient({ initialAppointments, departmen
   });
 
   const handleStatusChange = async (id: string, newStatus: AppointmentStatus) => {
+    if (isUpdating) return;
     setIsUpdating(true);
+    // Optimistic update
+    const prevAppointments = appointments;
+    const prevSelected = selectedApp;
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+    );
+    if (selectedApp && selectedApp.id === id) {
+      setSelectedApp({ ...selectedApp, status: newStatus });
+    }
     try {
-      // Local optimistic update
-      setAppointments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-      );
-      if (selectedApp && selectedApp.id === id) {
-        setSelectedApp({ ...selectedApp, status: newStatus });
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Update failed');
       }
-    } catch (err) {
-      console.error(err);
+      showToast('success', `Status updated to "${newStatus}"`);
+    } catch (err: any) {
+      // Rollback on failure
+      setAppointments(prevAppointments);
+      setSelectedApp(prevSelected);
+      showToast('error', err.message || 'Failed to update status. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -70,7 +92,26 @@ export default function AppointmentsTableClient({ initialAppointments, departmen
 
   return (
     <div className="space-y-6">
-      
+
+      {/* Toast notification */}
+      {toast && (
+        <div
+          className={`fixed top-5 right-5 z-[100] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold border transition-all ${
+            toast.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-red-50 text-red-800 border-red-200'
+          }`}
+        >
+          {toast.type === 'success'
+            ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            : <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />}
+          <span>{toast.msg}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-gray-400 hover:text-gray-600">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Control Bar: Search, Filters & Export */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-gray-200 shadow-xs">
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
@@ -293,4 +334,3 @@ export default function AppointmentsTableClient({ initialAppointments, departmen
     </div>
   );
 }
-

@@ -9,7 +9,7 @@ interface ImageDropzoneProps {
   onChange: (url: string) => void;
   folder?: string;
   label?: string;
-  aspectRatio?: 'landscape' | 'square' | 'banner' | 'auto';
+  aspectRatio?: 'landscape' | 'square' | 'banner' | 'portrait' | 'auto';
   hint?: string;
   className?: string;
 }
@@ -19,7 +19,7 @@ export default function ImageDropzone({
   onChange,
   folder = 'khair/uploads',
   label,
-  aspectRatio = 'landscape',
+  aspectRatio = 'landscape' as 'landscape' | 'square' | 'banner' | 'portrait' | 'auto',
   hint,
   className = '',
 }: ImageDropzoneProps) {
@@ -37,6 +37,8 @@ export default function ImageDropzone({
         return 'aspect-[16/9] min-h-[120px]';
       case 'square':
         return 'aspect-square min-h-[120px]';
+      case 'portrait':
+        return 'aspect-[3/4] min-h-[120px]';
       case 'landscape':
         return 'aspect-[16/10] min-h-[120px]';
       default:

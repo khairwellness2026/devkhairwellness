@@ -16,25 +16,26 @@ export default function HomepageCmsClient({ initialSections }: Props) {
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
-  const hero = sections['hero'] || {
-    id: 'hero',
+  const rawHero = sections['hero'];
+  const hero = {
+    id: rawHero?.id || 'hero',
     section_key: 'hero',
-    is_visible: true,
-    sort_order: 1,
-    title: 'Your Journey Back to Wellbeing',
-    subtitle: 'INTEGRATIVE HEALTHCARE',
-    description: 'A modern centre for Ayurveda, Physiotherapy and Holistic Rehabilitation...',
-    cta_label: 'Book Appointment',
-    cta_link: '/contact#book-appointment',
-    image_url: '',
-    mobile_image_url: '',
+    is_visible: rawHero?.is_visible !== false,
+    sort_order: rawHero?.sort_order || 1,
+    title: rawHero?.title || 'Your Journey Back to Wellbeing',
+    subtitle: rawHero?.subtitle || 'INTEGRATIVE HEALTHCARE',
+    description: rawHero?.description || '',
+    cta_label: rawHero?.cta_label || 'Book Appointment',
+    cta_link: rawHero?.cta_link || '/contact#book-appointment',
+    image_url: rawHero?.image_url || '',
+    mobile_image_url: rawHero?.mobile_image_url || rawHero?.metadata?.mobile_image_url || '',
   };
 
   const handleHeroChange = (field: string, val: any) => {
     setSections((prev) => ({
       ...prev,
       hero: {
-        ...prev['hero'],
+        ...(prev['hero'] || hero),
         [field]: val,
       },
     }));
