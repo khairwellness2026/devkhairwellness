@@ -53,21 +53,49 @@ export async function POST(req: NextRequest) {
       }
 
       case 'department': {
-        const { id, slug, featured_image, icon, is_published, locale, name, short_description, full_description, treatments } = payload;
+        const { id, slug, featured_image, icon, is_published, locale, name, short_description, full_description, treatments, hero_banner_url, hero_mobile_banner_url } = payload;
 
-        // 1. Upsert department
-        const { data: deptData, error: dErr } = await supabase
-          .from('departments')
-          .upsert(
-            { id: id || undefined, slug, featured_image, icon, is_published },
-            { onConflict: 'slug' }
-          )
-          .select('id')
-          .single();
+        // Store banner images in gallery_images text array
+        const gallery_images: string[] = [];
+        if (hero_banner_url) gallery_images.push(`hero:${hero_banner_url}`);
+        if (hero_mobile_banner_url) gallery_images.push(`mobile:${hero_mobile_banner_url}`);
 
-        const deptId = deptData?.id || id;
+        // Check if id is an existing valid UUID
+        const isUUID = Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+
+        let deptId = id;
+        if (isUUID) {
+          const { data: deptData, error: dErr } = await supabase
+            .from('departments')
+            .upsert(
+              { id, slug, featured_image, icon, is_published, gallery_images },
+              { onConflict: 'id' }
+            )
+            .select('id')
+            .single();
+
+          if (dErr) {
+            console.error('Department update error:', dErr);
+            throw new Error(dErr.message);
+          }
+          deptId = deptData?.id || id;
+        } else {
+          // New department
+          const { data: deptData, error: dErr } = await supabase
+            .from('departments')
+            .insert({ slug, featured_image, icon, is_published, gallery_images })
+            .select('id')
+            .single();
+
+          if (dErr) {
+            console.error('Department insert error:', dErr);
+            throw new Error(dErr.message);
+          }
+          deptId = deptData?.id;
+        }
+
         if (deptId && locale) {
-          await supabase.from('department_translations').upsert(
+          const { error: tErr } = await supabase.from('department_translations').upsert(
             {
               department_id: deptId,
               locale,
@@ -78,6 +106,11 @@ export async function POST(req: NextRequest) {
             },
             { onConflict: 'department_id,locale' }
           );
+
+          if (tErr) {
+            console.error('Department translation error:', tErr);
+            throw new Error(tErr.message);
+          }
         }
 
         return NextResponse.json({ success: true, message: 'Department updated', id: deptId });
@@ -86,20 +119,82 @@ export async function POST(req: NextRequest) {
       case 'page': {
         const { slug, featured_image, is_published, locale, title, subtitle, content } = payload;
 
-        const { data: pageData } = await supabase
+        // 1. Find or insert page record by slug (pages only has id, slug, is_published)
+        let pageId: string | undefined;
+        const { data: existingPage, error: findErr } = await supabase
           .from('pages')
-          .upsert({ slug, featured_image, is_published }, { onConflict: 'slug' })
           .select('id')
-          .single();
+          .eq('slug', slug)
+          .maybeSingle();
 
-        if (pageData?.id && locale) {
-          await supabase.from('page_translations').upsert(
-            { page_id: pageData.id, locale, title, subtitle, content },
-            { onConflict: 'page_id,locale' }
-          );
+        if (findErr) {
+          console.error('Error finding page:', findErr);
         }
 
-        return NextResponse.json({ success: true, message: 'Page updated' });
+        if (existingPage?.id) {
+          pageId = existingPage.id;
+          if (typeof is_published === 'boolean') {
+            await supabase.from('pages').update({ is_published }).eq('id', pageId);
+          }
+        } else {
+          const { data: newPage, error: insertErr } = await supabase
+            .from('pages')
+            .insert({ slug, is_published: is_published ?? true })
+            .select('id')
+            .single();
+
+          if (insertErr) {
+            console.error('Error inserting page:', insertErr);
+            return NextResponse.json({ error: insertErr.message }, { status: 500 });
+          }
+          pageId = newPage?.id;
+        }
+
+        if (pageId && locale) {
+          // Merge featured_image into content JSONB
+          const existingContent = (typeof content === 'object' && content !== null) ? content : {};
+          const mergedContent = {
+            ...existingContent,
+            ...(featured_image !== undefined ? { featured_image } : {}),
+          };
+
+          const { error: transErr } = await supabase.from('page_translations').upsert(
+            {
+              page_id: pageId,
+              locale,
+              title,
+              subtitle,
+              content: mergedContent,
+            },
+            { onConflict: 'page_id,locale' }
+          );
+
+          if (transErr) {
+            console.error('Error updating page translation:', transErr);
+            return NextResponse.json({ error: transErr.message }, { status: 500 });
+          }
+
+          // If featured_image is provided, propagate to other translations of this page so all locales share it
+          if (featured_image) {
+            const { data: otherTrans } = await supabase
+              .from('page_translations')
+              .select('id, locale, content')
+              .eq('page_id', pageId)
+              .neq('locale', locale);
+
+            if (otherTrans && otherTrans.length > 0) {
+              for (const ot of otherTrans) {
+                const otContent = (typeof ot.content === 'object' && ot.content !== null) ? ot.content : {};
+                await supabase
+                  .from('page_translations')
+                  .update({ content: { ...otContent, featured_image } })
+                  .eq('id', ot.id);
+              }
+            }
+          }
+        }
+
+        return NextResponse.json({ success: true, message: 'Page updated', id: pageId });
       }
 
       case 'gallery_image': {

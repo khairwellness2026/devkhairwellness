@@ -89,29 +89,31 @@ export default async function AboutPage({
             {/* Facility & Heritage Showcase Image */}
             <div className="lg:col-span-6 relative">
               {page.featured_image ? (
-                <div className="rounded-3xl overflow-hidden shadow-2xl border border-khair-gold/30 aspect-[4/3] bg-khair-softBeige/30">
-                  <img
-                    src={page.featured_image}
-                    alt={page.title || "KHAIR International Hospital"}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="rounded-3xl overflow-hidden shadow-2xl border border-khair-gold/30 bg-[#FAF7EF] p-2 sm:p-2.5">
+                  <div className="relative rounded-2xl overflow-hidden bg-white">
+                    <img
+                      src={page.featured_image}
+                      alt={page.title || "KHAIR International Hospital"}
+                      className="w-full h-auto object-contain block rounded-2xl"
+                    />
+                  </div>
                 </div>
               ) : (
-                <div className="rounded-3xl border border-khair-gold/20 aspect-[4/3] bg-khair-warmIvory/60 flex items-center justify-center p-8 text-center">
+                <div className="rounded-3xl border border-khair-gold/20 aspect-[16/9] bg-khair-warmIvory/60 flex items-center justify-center p-8 text-center">
                   <div className="space-y-2">
                     <p className="font-serif text-2xl font-bold text-khair-deepForest">{page.title}</p>
-                    <p className="text-xs text-gray-500">Ayurveda, Physiotherapy & Rehabilitation</p>
+                    <p className="text-xs text-gray-500">Ayurveda, Physiotherapy &amp; Rehabilitation</p>
                   </div>
                 </div>
               )}
               
               {/* Overlay Emblem Badge */}
               {settings?.emblem_url && (
-                <div className="absolute -bottom-6 -right-6 rtl:-right-auto rtl:-left-6 bg-white p-4 rounded-3xl shadow-xl border border-khair-gold/40 flex items-center gap-3">
+                <div className="hidden sm:flex absolute -bottom-5 -right-5 rtl:-right-auto rtl:-left-5 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-khair-gold/40 items-center gap-3">
                   <img
                     src={settings.emblem_url}
                     alt={settings.site_name || "KHAIR Emblem"}
-                    className="w-12 h-12 object-contain"
+                    className="w-10 h-10 object-contain"
                   />
                   <div>
                     <span className="block text-xs font-bold text-khair-deepForest">Kottakkal, Kerala</span>

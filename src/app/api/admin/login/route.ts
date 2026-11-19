@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     if (authError || !authData.user) {
       // Fallback dev admin check if live supabase auth is not configured yet
       if (email === 'admin@khair.in' && password === 'KhairAdmin2026!') {
-        return NextResponse.json({
+        const response = NextResponse.json({
           success: true,
           user: {
             id: 'dev-admin-id',
@@ -28,6 +28,13 @@ export async function POST(req: NextRequest) {
             role: 'SUPER_ADMIN',
           },
         });
+        response.cookies.set('khair_admin_auth', 'authenticated', {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+        });
+        return response;
       }
       return NextResponse.json({ error: authError?.message || 'Invalid credentials' }, { status: 401 });
     }
@@ -42,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     const role = profile?.role || 'EDITOR';
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: {
         id: authData.user.id,
@@ -51,6 +58,13 @@ export async function POST(req: NextRequest) {
         role,
       },
     });
+    response.cookies.set('khair_admin_auth', 'authenticated', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return response;
   } catch (err: any) {
     console.error('Admin login error:', err);
     return NextResponse.json({ error: err.message || 'Authentication error' }, { status: 500 });

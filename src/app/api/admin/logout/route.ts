@@ -5,7 +5,9 @@ export async function POST() {
   try {
     const supabase = await createServerSupabaseClient();
     await supabase.auth.signOut();
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    response.cookies.delete('khair_admin_auth');
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
